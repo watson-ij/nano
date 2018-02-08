@@ -4,7 +4,7 @@ quick setup for analysis
 scram p -n nanoAOD CMSSW CMSSW_9_4_2
 cd nanoAOD/src
 cmsenv
-git clone git@github.com:jshlee/nano.git 
+git clone git@github.com:watson-ij/nano.git 
 scram b -j 20
 ```
 
@@ -23,7 +23,7 @@ git cms-merge-topic cms-nanoAOD:master
 git checkout -b nanoAOD cms-nanoAOD/master
 git clone https://github.com/cms-nanoAOD/nanoAOD-tools.git PhysicsTools/NanoAODTools
 
-git clone git@github.com:jshlee/nano.git 
+git clone git@github.com:watson-ij/nano.git 
 
 scram b -j 20
 ```
