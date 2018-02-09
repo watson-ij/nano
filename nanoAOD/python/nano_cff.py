@@ -20,7 +20,8 @@ def customise(process):
     
     # process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
     process.load('nano.nanoAOD.v0_cff')
-    
+
+    process.nanoAOD_step += process.v0GenParticles
     process.nanoAOD_step += process.v0Tables
     
     process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1000)

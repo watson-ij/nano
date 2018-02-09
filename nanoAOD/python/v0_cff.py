@@ -41,7 +41,38 @@ lambdaCandidateTable.variables.phi.precision=14
 lambdaCandidateTable.variables.eta.precision=14
 lambdaCandidateTable.variables.mass.precision=14
 
+# Gen particle corresponding to Ks/Lambdaimport FWCore.ParameterSet.Config as cms
+from  PhysicsTools.NanoAOD.common_cff import *
+
+##################### User floats producers, selectors ##########################
+
+v0GenParticles = cms.EDProducer("GenParticlePruner",
+    src = cms.InputTag("prunedGenParticles"),
+    select = cms.vstring(
+	"drop *",
+        "keep+ abs(pdgId) == 310 ",  #  keep first gen decay product for all kshort
+        "keep+ abs(pdgId) == 3122 ",  #  keep first gen decay product for all lambda 		
+   )
+)
+
+##################### Tables for final output and docs ##########################
+v0GenParticleTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    src = cms.InputTag("v0GenParticles"),
+    cut = cms.string(""), #we should not filter after pruning
+    name= cms.string("V0GenPart"),
+    doc = cms.string("V0 gen particles "),
+    singleton = cms.bool(False), # the number of entries is variable
+    extension = cms.bool(False), # this is the main table for the taus
+    variables = cms.PSet(
+         pt  = Var("pt",  float,precision=8),
+         phi = Var("phi", float,precision=8),
+         eta  = Var("eta",  float,precision=8),
+         mass = Var("mass", float,precision=8),
+         pdgId  = Var("pdgId", int, doc="PDG id"),
+    )
+)
+
 #before cross linking
-v0Sequence = cms.Sequence()
+v0Sequence = cms.Sequence(v0GenParticles)
 #after cross linkining
-v0Tables = cms.Sequence(kshortCandidateTable+lambdaCandidateTable)
+v0Tables = cms.Sequence(kshortCandidateTable+lambdaCandidateTable+v0GenParticleTable)
