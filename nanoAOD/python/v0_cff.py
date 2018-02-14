@@ -69,6 +69,9 @@ v0GenParticleTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
          eta  = Var("eta",  float,precision=8),
          mass = Var("mass", float,precision=8),
          pdgId  = Var("pdgId", int, doc="PDG id"),
+         x = Var("vx()", float, doc = "secondary vertex X position, in cm",precision=10),
+         y = Var("vy()", float, doc = "secondary vertex Y position, in cm",precision=10),
+         z = Var("vz()", float, doc = "secondary vertex Z position, in cm",precision=14),
     )
 )
 
