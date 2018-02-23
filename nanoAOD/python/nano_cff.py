@@ -18,7 +18,10 @@ def customise(process):
     #process.load('nano.nanoAOD.triggerProducer_cfi')
     #process.nanoAOD_step += process.nanoTrigger
     
-    # process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
+    process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
+    process.load('nano.nanoAOD.cmesons_cff')
+    process.nanoAOD_step += process.cmesonTables
+
     process.load('nano.nanoAOD.v0_cff')
 
     process.nanoAOD_step += process.v0GenParticles
