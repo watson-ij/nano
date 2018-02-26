@@ -22,6 +22,9 @@ def customise(process):
     process.load('nano.nanoAOD.cmesons_cff')
     process.nanoAOD_step += process.cmesonTables
 
+    process.load('nano.nanoAOD.mesons_cff')
+    process.nanoAOD_step += process.mesonTables
+
     process.load('nano.nanoAOD.v0_cff')
 
     process.nanoAOD_step += process.v0GenParticles
