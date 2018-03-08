@@ -7,4 +7,5 @@
 <use   name="boost"/>
 <export>
   <lib   name="1"/>
+  <bin name="1"/>
 </export>

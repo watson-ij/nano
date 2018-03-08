@@ -1,0 +1,7 @@
+<use   name="FWCore/FWLite"/>
+<use   name="DataFormats/FWLite"/>
+<use   name="SimDataFormats/Track"/>
+<use   name="SimDataFormats/Vertex"/>
+<use   name="SimDataFormats/GeneratorProducts"/>
+<bin   file="V0Sim.cc" name="V0Sim">
+</bin>
