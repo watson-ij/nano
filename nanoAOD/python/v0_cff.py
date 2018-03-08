@@ -69,13 +69,50 @@ v0GenParticleTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
          eta  = Var("eta",  float,precision=8),
          mass = Var("mass", float,precision=8),
          pdgId  = Var("pdgId", int, doc="PDG id"),
+         vx  = Var("vx", float, precision=8),
+         vy  = Var("vy", float, precision=8),
+         vz  = Var("vz", float, precision=8),
          # x = Var("daughterRef(0).vx()", float, doc = "secondary vertex X position, in cm",precision=10),
          # y = Var("daughterRef(0).vy()", float, doc = "secondary vertex Y position, in cm",precision=10),
          # z = Var("daughterRef(0).vz()", float, doc = "secondary vertex Z position, in cm",precision=14),
     )
 )
 
+
+packedGenParticles = cms.EDProducer("GenParticlePruner",
+    src = cms.InputTag("packedGenParticles"),
+    select = cms.vstring(
+ 	"keep *",
+   )
+)
+
+##################### Tables for final output and docs ##########################
+packedGenParticleTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    src = cms.InputTag("packedGenParticles"),
+    cut = cms.string(""), #we should not filter after pruning
+    name= cms.string("StableGenPart"),
+    doc = cms.string("stable gen particles "),
+    singleton = cms.bool(False), # the number of entries is variable
+    extension = cms.bool(False), # this is the main table for the taus
+    variables = cms.PSet(
+         pt  = Var("pt",  float,precision=8),
+         phi = Var("phi", float,precision=8),
+         eta  = Var("eta",  float,precision=8),
+         mass = Var("mass", float,precision=8),
+         pdgId  = Var("pdgId", int, doc="PDG id"),
+         status  = Var("status", int, doc="Particle status. 1=stable"),
+         vx  = Var("vx", float, precision=8),
+         vy  = Var("vy", float, precision=8),
+         vz  = Var("vz", float, precision=8),
+    )
+)
+
+
 #before cross linking
+# v0Sequence = cms.Sequence(v0GenParticles+packedGenParticles)
+# #after cross linkining
+# v0Tables = cms.Sequence(kshortCandidateTable+lambdaCandidateTable+v0GenParticleTable+packedGenParticleTable)
+
 v0Sequence = cms.Sequence(v0GenParticles)
 #after cross linkining
 v0Tables = cms.Sequence(kshortCandidateTable+lambdaCandidateTable+v0GenParticleTable)
