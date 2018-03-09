@@ -11,6 +11,7 @@
 #include "DataFormats/FWLite/interface/Event.h"
 #include "DataFormats/FWLite/interface/Handle.h"
 #include "SimDataFormats/Track/interface/SimTrack.h"
+#include "SimDataFormats/Vertex/interface/SimVertex.h"
 
 #include "boost/any.hpp"
 
@@ -49,11 +50,16 @@ int main(int argc, char *argv[]) {
   auto f = new TFile(argv[1]);
   fwlite::Event ev(f);
   fwlite::Handle<vector<SimTrack>> h;
+  fwlite::Handle<vector<SimVertex>> hv;
 
   auto fout = new TFile("v0sim.root", "RECREATE");
   auto tout = new TTree("v0sim", "v0sim");
   int nKs = 0;
   tout->Branch("nKs", &nKs, "nKs/I");
+  float pvx, pvy, pvz;
+  tout->Branch("pvx", &pvx, "pvx/F");
+  tout->Branch("pvy", &pvy, "pvy/F");
+  tout->Branch("pvz", &pvz, "pvz/F");
 
   vector<vector<float>*> vf;
   vector<vector<bool>*> vb;
@@ -67,25 +73,42 @@ int main(int argc, char *argv[]) {
   make_branchf(pt);  make_branchf(eta);  make_branchf(phi);
   make_branchf(pt1);  make_branchf(eta1);  make_branchf(phi1);  make_branchi(pdg1);
   make_branchf(pt2);  make_branchf(eta2);  make_branchf(phi2);  make_branchi(pdg2);
+  make_branchf(vx);  make_branchf(vy);  make_branchf(vz);
+  make_branchf(vtx);  make_branchf(vty);  make_branchf(vtz);
+  // Trackersurfaceposition from Pions give position on final layer it seems, not interesting for us
+  // make_branchf(vx1);  make_branchf(vy1);  make_branchf(vz1);
+  // make_branchf(vx2);  make_branchf(vy2);  make_branchf(vz2);
+  make_branchf(dtxy);  make_branchf(dtxyz);
+  make_branchf(tau); make_branchf(bg);
   
   for (ev.toBegin(); !ev.atEnd(); ++ev) {
     for (auto a : vf) a->clear();
     for (auto b : vb) b->clear();
     for (auto b : vi) b->clear();
-    
+
     h.getByLabel(ev, "g4SimHits");
+    hv.getByLabel(ev, "g4SimHits");
+
+    // It appears the Primary Vertex is always the first SimVertex in the list (makes sense)
+    pvx = hv.product()->at(0).position().x();
+    pvy = hv.product()->at(0).position().y();
+    pvz = hv.product()->at(0).position().z();
+
     auto v = h.product();
     vector<const SimTrack*> ks;
     for (auto& trk : *h) {
       if (trk.type() != pdgId_KS) continue;
       ks.push_back(&trk);
       auto& ksp = trk.momentum();
+      auto& ksv = trk.trackerSurfacePosition();
       bool ismatch = false;
       bool ispi0 = false;
       // Match pions
       for (unsigned int i = 0; i < (v->size()-1); ++i) {
 	auto &pi1 = v->at(i);
 	auto &pi2 = v->at(i+1);
+
+	const SimTrack *p1 = 0, *p2 = 0;
 	if (abs(pi1.type()) == pdgId_pip && abs(pi2.type()) == pdgId_pip) {
 	  if (pi1.type() == pi2.type()) continue;
 	  auto comb = pi1.momentum() + pi2.momentum();
@@ -94,50 +117,60 @@ int main(int argc, char *argv[]) {
 	  if (fabs(comb.phi() - ksp.phi()) > feps) continue;
 	  if (fabs(comb.mass() - ksp.mass()) > feps) continue;
 	  ismatch = true;
-
-	  pt1.push_back(pi1.momentum().pt());
-	  eta1.push_back(pi1.momentum().eta());
-	  phi1.push_back(pi1.momentum().phi());
-	  pdg1.push_back(pi2.type());
-
-	  pt2.push_back(pi2.momentum().pt());
-	  eta2.push_back(pi2.momentum().eta());
-	  phi2.push_back(pi2.momentum().phi());
-	  pdg2.push_back(pi2.type());
-	  
-	  break;
-	}
-	else if (abs(pi1.type()) == pdgId_pi0 && abs(pi2.type()) == pdgId_pi0) {
+	  p1 = &pi1;
+	  p2 = &pi2;
+	} else if (abs(pi1.type()) == pdgId_pi0 && abs(pi2.type()) == pdgId_pi0) {
 	  auto comb = pi1.momentum() + pi2.momentum();
 	  if (fabs(comb.pt() - ksp.pt()) > feps) continue;
 	  if (fabs(comb.eta() - ksp.eta()) > feps) continue;
 	  if (fabs(comb.phi() - ksp.phi()) > feps) continue;
 	  if (fabs(comb.mass() - ksp.mass()) > feps) continue;
 	  ispi0 = true;
+	  p1 = &pi1;
+	  p2 = &pi2;
+	}
+	if (p1) {
 
-	  pt1.push_back(pi1.momentum().pt());
-	  eta1.push_back(pi1.momentum().eta());
-	  phi1.push_back(pi1.momentum().phi());
-	  pdg1.push_back(pi2.type());
+	  pt1.push_back(p1->momentum().pt());
+	  eta1.push_back(p1->momentum().eta());
+	  phi1.push_back(p1->momentum().phi());
+	  pdg1.push_back(p2->type());
 
-	  pt2.push_back(pi2.momentum().pt());
-	  eta2.push_back(pi2.momentum().eta());
-	  phi2.push_back(pi2.momentum().phi());
-	  pdg2.push_back(pi2.type());
+	  pt2.push_back(p2->momentum().pt());
+	  eta2.push_back(p2->momentum().eta());
+	  phi2.push_back(p2->momentum().phi());
+	  pdg2.push_back(p2->type());
 
+	  // vx1.push_back(p1->trackerSurfacePosition().x());vy1.push_back(p1->trackerSurfacePosition().y());vz1.push_back(p1->trackerSurfacePosition().z());
+	  // vx2.push_back(p2->trackerSurfacePosition().x());vy2.push_back(p2->trackerSurfacePosition().y());vz2.push_back(p2->trackerSurfacePosition().z());
+
+	  // As far as I can tell, this is the position of the Kshort decay vertex
+	  int vi = p1->vertIndex();
+	  if (vi >= 0) {
+	    auto vt = hv.product()->at(vi);
+	    vtx.push_back(vt.position().x());
+	    vty.push_back(vt.position().y());
+	    vtz.push_back(vt.position().z());
+
+	    dtxy.push_back(sqrt(pow(vt.position().x() - pvx, 2) + pow(vt.position().y() - pvy, 2)));
+	    float dl = sqrt(pow(vt.position().x() - pvx, 2) + pow(vt.position().y() - pvy, 2) + pow(vt.position().z() - pvz, 2));
+	    dtxyz.push_back(dl);
+	    float bgam = ksp.Beta()*ksp.Gamma();
+	    bg.push_back(bgam);
+	    tau.push_back(dl * (1.0 / 300.0) / bgam); // tau (in ps) = l / (beta*gamma*c), l in mm (?)
+	  }
+	  
 	  break;
 	}
       }
 
       if (!ispi0 && !ismatch) {
-	  pt1.push_back(-99);
-	  eta1.push_back(-99);
-	  phi1.push_back(-99);
-	  pdg1.push_back(-1);
-	  pt2.push_back(-99);
-	  eta2.push_back(-99);
-	  phi2.push_back(-99);
-	  pdg2.push_back(-1);
+	  pt1.push_back(-99);	  eta1.push_back(-99);	  phi1.push_back(-99);	  pdg1.push_back(-1);
+	  pt2.push_back(-99);	  eta2.push_back(-99);	  phi2.push_back(-99);	  pdg2.push_back(-1);
+	  // vx1.push_back(-999); vy1.push_back(-999); vz1.push_back(-999);
+	  // vx2.push_back(-999); vy2.push_back(-999); vz2.push_back(-999);
+	  vtx.push_back(-999); vty.push_back(-999); vtz.push_back(-999);
+	  dtxy.push_back(-999); dtxyz.push_back(-999); tau.push_back(-99); bg.push_back(-99);
       }
       
       match.push_back(ismatch);
@@ -145,6 +178,10 @@ int main(int argc, char *argv[]) {
       pt.push_back(ksp.pt());
       phi.push_back(ksp.phi());
       eta.push_back(ksp.eta());
+      // This seems to be production position, should equal PV?
+      vx.push_back(ksv.x());
+      vy.push_back(ksv.y());
+      vz.push_back(ksv.z());
     }
 
     nKs = ks.size();
